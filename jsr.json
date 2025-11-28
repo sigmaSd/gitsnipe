@@ -1,0 +1,6 @@
+{
+  "name": "@sigmasd/gitsnipe",
+  "version": "0.1.0",
+  "exports": "./main.ts",
+  "license": "MIT"
+}
