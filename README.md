@@ -13,7 +13,7 @@ Uses `git sparse-checkout` under the hood and works in **Node**, **Deno**, and
 ```sh
 deno -A jsr:@sigmasd/gitsnipe <path1> <path2> <destination>
 # or
-npx xjsr @sigmasd/gitsnipe <path1> <path2> <destination>
+npx rjsr @sigmasd/gitsnipe <path1> <path2> <destination>
 # or
-bunx --bun xjsr @sigmasd/gitsnipe <path1> <path2> <destination>
+bunx rjsr @sigmasd/gitsnipe <path1> <path2> <destination>
 ```
