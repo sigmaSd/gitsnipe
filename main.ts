@@ -1,6 +1,8 @@
-import "jsr:@sigma/deno-compat@0.8.1/node";
-import { $ } from "jsr:@david/dax@0.44.1";
-import { basename, dirname, join } from "jsr:@std/path@1";
+import { basename, dirname, join } from "node:path";
+import { cp, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import process from "node:process";
+import { tmpdir } from "node:os";
 
 /**
  * Parses a GitHub URL to extract the repository URL, branch, and internal path.
@@ -30,7 +32,7 @@ export function parseGithubUrl(url: string): {
 /**
  * Usage information for the gitsnipe CLI.
  */
-export const usage: string = `Usage: gitsnipe <github_url> [dest]
+export const usage = `Usage: gitsnipe <github_url> [dest]
        gitsnipe <repo> <path1> <path2> ... <dest>
 
 Example:
@@ -93,46 +95,59 @@ export function resolveConfig(args: string[]): Config | null {
   }
 }
 
+function git(args: string[]) {
+  const { status } = spawnSync("git", args, { stdio: "inherit" });
+  if (status !== 0) {
+    throw new Error(`Git command failed with exit code ${status}`);
+  }
+}
+
 async function run() {
-  const config = resolveConfig(Deno.args);
+  const config = resolveConfig(process.argv.slice(2));
   if (!config) {
     console.error(usage);
-    Deno.exit(1);
+    process.exit(1);
   }
 
   const { repoUrl, branch, sparsePaths, dest } = config;
 
-  const tmp = await Deno.makeTempDir();
+  const tmp = await mkdtemp(join(tmpdir(), "gitsnipe-"));
   const repoDir = join(tmp, "repo");
 
-  console.log("→ Creating sparse checkout...");
-  const branchFlag = branch ? ["-b", branch] : [];
-  await $`git clone --depth=1 --filter=tree:0 --no-checkout ${branchFlag} ${repoUrl} ${repoDir}`;
+  try {
+    console.log("→ Creating sparse checkout...");
+    const branchArgs = branch ? ["-b", branch] : [];
+    git([
+      "clone",
+      "--depth=1",
+      "--filter=tree:0",
+      "--no-checkout",
+      ...branchArgs,
+      repoUrl,
+      repoDir,
+    ]);
 
-  console.log("→ Configuring sparse paths:", sparsePaths);
+    console.log("→ Configuring sparse paths:", sparsePaths);
 
-  await $`git -C ${repoDir} sparse-checkout init --cone`;
-  await $`git -C ${repoDir} sparse-checkout set ${sparsePaths}`;
-  await $`git -C ${repoDir} checkout`;
+    git(["-C", repoDir, "sparse-checkout", "init", "--cone"]);
+    git(["-C", repoDir, "sparse-checkout", "set", ...sparsePaths]);
+    git(["-C", repoDir, "checkout"]);
 
-  console.log("→ Copying...");
-  await Deno.mkdir(dest, { recursive: true });
+    console.log("→ Copying...");
+    await mkdir(dest, { recursive: true });
 
-  for (const p of sparsePaths) {
-    const src = join(repoDir, p);
-    const dst = join(dest, basename(p));
+    for (const p of sparsePaths) {
+      const src = join(repoDir, p);
+      const dst = join(dest, basename(p));
 
-    await Deno.mkdir(dirname(dst), { recursive: true });
-
-    try {
-      await Deno.copyFile(src, dst);
-    } catch {
-      await $`cp -R ${src} ${dst}`;
+      await mkdir(dirname(dst), { recursive: true });
+      await cp(src, dst, { recursive: true });
     }
-  }
 
-  console.log("✔ Done:", dest);
-  await Deno.remove(tmp, { recursive: true });
+    console.log("✔ Done:", dest);
+  } finally {
+    await rm(tmp, { recursive: true, force: true });
+  }
 }
 
 if (import.meta.main) {
