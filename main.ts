@@ -2,9 +2,17 @@ import "jsr:@sigma/deno-compat@0.8.1/node";
 import { $ } from "jsr:@david/dax@0.44.1";
 import { basename, dirname, join } from "jsr:@std/path@1";
 
-export function parseGithubUrl(
-  url: string,
-): { repoUrl: string; branch: string; path: string } | null {
+/**
+ * Parses a GitHub URL to extract the repository URL, branch, and internal path.
+ * Supports tree and blob URLs.
+ * @param url The GitHub URL to parse.
+ * @returns An object containing the repository URL, branch, and path, or null if the URL is invalid.
+ */
+export function parseGithubUrl(url: string): {
+  repoUrl: string;
+  branch: string;
+  path: string;
+} | null {
   const match = url.match(
     /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/(tree|blob)\/([^/]+)\/(.*)$/,
   );
@@ -19,20 +27,35 @@ export function parseGithubUrl(
   return null;
 }
 
-export const usage: string = `Usage: gitsnipe <github_url> [dest]
+/**
+ * Usage information for the gitsnipe CLI.
+ */
+export const usage = `Usage: gitsnipe <github_url> [dest]
        gitsnipe <repo> <path1> <path2> ... <dest>
 
 Example:
   gitsnipe https://github.com/googleworkspace/cli/tree/main/skills/gws-calendar-agenda
   gitsnipe https://github.com/googleworkspace/cli skills/gws-calendar-agenda .`;
 
+/**
+ * Configuration for the sparse checkout process.
+ */
 export interface Config {
+  /** The URL of the GitHub repository. */
   repoUrl: string;
+  /** The branch to clone (optional). */
   branch?: string;
+  /** The paths within the repository to include in the sparse checkout. */
   sparsePaths: string[];
+  /** The destination directory for the downloaded files. */
   dest: string;
 }
 
+/**
+ * Resolves the configuration from the provided command-line arguments.
+ * @param args The command-line arguments.
+ * @returns The resolved configuration or null if the arguments are invalid.
+ */
 export function resolveConfig(args: string[]): Config | null {
   if (args.length === 0) {
     return null;
