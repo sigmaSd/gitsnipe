@@ -30,7 +30,7 @@ export function parseGithubUrl(url: string): {
 /**
  * Usage information for the gitsnipe CLI.
  */
-export const usage = `Usage: gitsnipe <github_url> [dest]
+export const usage: string = `Usage: gitsnipe <github_url> [dest]
        gitsnipe <repo> <path1> <path2> ... <dest>
 
 Example:
