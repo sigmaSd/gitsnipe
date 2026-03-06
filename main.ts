@@ -2,7 +2,9 @@ import "jsr:@sigma/deno-compat@0.8.1/node";
 import { $ } from "jsr:@david/dax@0.44.1";
 import { basename, dirname, join } from "jsr:@std/path@1";
 
-export function parseGithubUrl(url: string) {
+export function parseGithubUrl(
+  url: string,
+): { repoUrl: string; branch: string; path: string } | null {
   const match = url.match(
     /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/(tree|blob)\/([^/]+)\/(.*)$/,
   );
@@ -17,7 +19,7 @@ export function parseGithubUrl(url: string) {
   return null;
 }
 
-export const usage = `Usage: gitsnipe <github_url> [dest]
+export const husage = `Usage: gitsnipe <github_url> [dest]
        gitsnipe <repo> <path1> <path2> ... <dest>
 
 Example:
@@ -71,7 +73,7 @@ export function resolveConfig(args: string[]): Config | null {
 async function run() {
   const config = resolveConfig(Deno.args);
   if (!config) {
-    console.error(usage);
+    console.error(husage);
     Deno.exit(1);
   }
 
