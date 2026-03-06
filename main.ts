@@ -1,5 +1,5 @@
 import { basename, dirname, join } from "node:path";
-import { cp, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, rm, stat } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import process from "node:process";
 import { tmpdir } from "node:os";
@@ -140,11 +140,24 @@ async function run() {
       const src = join(repoDir, p);
       const dst = join(dest, basename(p));
 
+      try {
+        await stat(src);
+      } catch {
+        throw new Error(`Path not found in repository: ${p}`);
+      }
+
       await mkdir(dirname(dst), { recursive: true });
       await cp(src, dst, { recursive: true });
     }
 
     console.log("✔ Done:", dest);
+  } catch (e) {
+    if (e instanceof Error) {
+      console.error(`\n❌ Error: ${e.message}`);
+    } else {
+      console.error(`\n❌ Error: ${e}`);
+    }
+    process.exit(1);
   } finally {
     await rm(tmp, { recursive: true, force: true });
   }
