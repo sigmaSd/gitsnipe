@@ -19,7 +19,7 @@ export function parseGithubUrl(
   return null;
 }
 
-export const husage = `Usage: gitsnipe <github_url> [dest]
+export const usage: string = `Usage: gitsnipe <github_url> [dest]
        gitsnipe <repo> <path1> <path2> ... <dest>
 
 Example:
@@ -73,7 +73,7 @@ export function resolveConfig(args: string[]): Config | null {
 async function run() {
   const config = resolveConfig(Deno.args);
   if (!config) {
-    console.error(husage);
+    console.error(usage);
     Deno.exit(1);
   }
 
